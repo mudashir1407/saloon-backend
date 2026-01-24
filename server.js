@@ -6,6 +6,20 @@ require("dotenv").config();
 const bookingRoutes = require("./routes/bookingRoutes");
 
 const app = express();
+app.get("/", (req, res) => {
+  res.send("Combs Salon Backend is running 🚀");
+});
+
+app.post("/api/admin/login", (req, res) => {
+  const { email, password } = req.body;
+
+  // simple admin check
+  if (email === "mudashirsa@gmail.com" && password === "123456") {
+    res.json({ success: true });
+  } else {
+    res.status(401).json({ error: "Invalid login details" });
+  }
+});
 
 // Middleware
 app.use(cors());
