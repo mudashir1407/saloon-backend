@@ -14,7 +14,7 @@ app.post("/api/admin/login", (req, res) => {
   const { email, password } = req.body;
 
   // simple admin check
-  if (email === "mudashirsa@gmail.com" && password === "123456") {
+  if (email === "admin@combs.com.com" && password === "123456") {
     res.json({ success: true });
   } else {
     res.status(401).json({ error: "Invalid login details" });
