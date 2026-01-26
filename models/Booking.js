@@ -18,10 +18,16 @@ const bookingSchema = new mongoose.Schema(
       type: Date,
       required: true
     },
+    time: {
+      type: string,
+      require: true
+
+    },
     status: {
       type: String,
       default: "pending"
-    }
+    },
+    
   },
   { timestamps: true }
 );
