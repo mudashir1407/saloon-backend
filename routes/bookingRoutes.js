@@ -3,51 +3,86 @@ const Booking = require("../models/Booking");
 
 const router = express.Router();
 
-/* ✅ CREATE Booking */
+
+// ✅ CREATE Booking
 router.post("/", async (req, res) => {
   try {
-    const booking = new Booking(req.body);
-    await booking.save();
-    res.json({ message: "Booking created successfully!" });
+    const booking = await Booking.create(req.body);
+
+    res.status(201).json({
+      message: "Booking created successfully!",
+      booking
+    });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(400).json({
+      error: err.message
+    });
   }
 });
 
-/* ✅ GET All Bookings */
+
+// ✅ GET All Bookings
 router.get("/", async (req, res) => {
   try {
     const bookings = await Booking.find().sort({ createdAt: -1 });
-    res.json(bookings);
+
+    res.status(200).json(bookings);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({
+      error: err.message
+    });
   }
 });
 
-/* ✅ UPDATE Booking Status */
+
+// ✅ UPDATE Booking Status (Complete)
 router.put("/:id", async (req, res) => {
   try {
-    const updated = await Booking.findByIdAndUpdate(
-      req.params.id,
-      { status: req.body.status },
-      { new: true }
-    );
+    const booking = await Booking.findById(req.params.id);
 
-    res.json(updated);
+    if (!booking) {
+      return res.status(404).json({
+        error: "Booking not found"
+      });
+    }
+
+    booking.status = req.body.status || booking.status;
+    await booking.save();
+
+    res.status(200).json({
+      message: "Booking updated successfully!",
+      booking
+    });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({
+      error: err.message
+    });
   }
 });
 
-/* ✅ DELETE Booking */
+
+// ❌ DELETE Booking
 router.delete("/:id", async (req, res) => {
   try {
-    await Booking.findByIdAndDelete(req.params.id);
-    res.json({ message: "Booking deleted successfully!" });
+    const booking = await Booking.findById(req.params.id);
+
+    if (!booking) {
+      return res.status(404).json({
+        error: "Booking not found"
+      });
+    }
+
+    await booking.deleteOne();
+
+    res.status(200).json({
+      message: "Booking deleted successfully!"
+    });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({
+      error: err.message
+    });
   }
 });
 
-module.exports = router;
 
+module.exports = router;
