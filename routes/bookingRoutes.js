@@ -23,28 +23,31 @@ router.get("/", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
-/* ✅ UPDATE Booking Status + SEND EMAIL */
 router.put("/:id", async (req, res) => {
   try {
+    console.log("🟡 Incoming status:", req.body.status);
+
     const booking = await Booking.findById(req.params.id);
 
     if (!booking) {
       return res.status(404).json({ error: "Booking not found" });
     }
 
-    // Prevent duplicate emails
-    if (booking.status === "Completed") {
-      return res.status(400).json({
-        error: "Booking already completed",
-      });
-    }
+    console.log("🟡 Previous status:", booking.status);
 
-    booking.status = req.body.status;
+    const previousStatus = booking.status;
+    const newStatus = req.body.status?.trim();
+
+    booking.status = newStatus;
     await booking.save();
 
-    // ✅ Send email ONLY when status is Completed
-    if (req.body.status === "Completed") {
+    // ✅ Send email ONLY when status changes to Completed
+    if (
+      previousStatus !== "Completed" &&
+      newStatus?.toLowerCase() === "completed"
+    ) {
+      console.log("📤 Sending email to:", booking.email);
+
       const htmlEmail = `
         <div style="font-family: Arial, sans-serif; line-height:1.6;">
           <h2 style="color:#d4af37;">Booking Confirmed ✨</h2>
