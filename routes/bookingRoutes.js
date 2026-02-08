@@ -4,99 +4,100 @@ const sendEmail = require("../utils/sendEmail");
 
 const router = express.Router();
 
-/* ============================
-   ✅ CREATE Booking
-============================ */
+/* ✅ CREATE Booking */
 router.post("/", async (req, res) => {
   try {
     const booking = await Booking.create(req.body);
-
-    res.status(201).json({
-      message: "Booking created successfully!",
-      booking,
-    });
+    res.status(201).json({ message: "Booking created", booking });
   } catch (err) {
-    res.status(400).json({
-      error: err.message,
-    });
+    res.status(400).json({ error: err.message });
   }
 });
 
-/* ============================
-   ✅ GET All Bookings
-============================ */
+/* ✅ GET All Bookings */
 router.get("/", async (req, res) => {
   try {
     const bookings = await Booking.find().sort({ createdAt: -1 });
-
-    res.status(200).json(bookings);
-  } catch (err) {
-    res.status(500).json({
-      error: err.message,
-    });
-  }
-});
-
-/* ============================
-   ✅ UPDATE Booking Status + Send Email
-============================ */
-router.put("/:id", async (req, res) => {
-  try {
-    const updated = await Booking.findByIdAndUpdate(
-      req.params.id,
-      { status: req.body.status },
-      { new: true }
-    );
-
-    if (!updated) {
-      return res.status(404).json({ error: "Booking not found" });
-    }
-
-    // ✅ Send Email When Completed
-    if (req.body.status === "Completed") {
-      await sendEmail(
-        updated.email,
-        "Booking Accepted ✅",
-        `Hello ${updated.name},
-
-Your salon booking has been accepted successfully 💇‍♀️✨
-
-Thank you for choosing us.
-See you soon!`
-      );
-    }
-
-    res.status(200).json({
-      message: "Booking updated successfully!",
-      booking: updated,
-    });
+    res.json(bookings);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-/* ============================
-   ❌ DELETE Booking
-============================ */
+/* ✅ UPDATE Booking Status + SEND EMAIL */
+router.put("/:id", async (req, res) => {
+  try {
+    const booking = await Booking.findById(req.params.id);
+
+    if (!booking) {
+      return res.status(404).json({ error: "Booking not found" });
+    }
+
+    // Prevent duplicate emails
+    if (booking.status === "Completed") {
+      return res.status(400).json({
+        error: "Booking already completed",
+      });
+    }
+
+    booking.status = req.body.status;
+    await booking.save();
+
+    // ✅ Send email ONLY when status is Completed
+    if (req.body.status === "Completed") {
+      const htmlEmail = `
+        <div style="font-family: Arial, sans-serif; line-height:1.6;">
+          <h2 style="color:#d4af37;">Booking Confirmed ✨</h2>
+          <p>Hello <b>${booking.name}</b>,</p>
+
+          <p>Your salon booking has been <b>successfully accepted</b>.</p>
+
+          <table style="margin-top:10px;">
+            <tr><td><b>Service:</b></td><td>${booking.service}</td></tr>
+            <tr><td><b>Date:</b></td><td>${new Date(booking.date).toDateString()}</td></tr>
+            <tr><td><b>Time:</b></td><td>${booking.time}</td></tr>
+          </table>
+
+          <p style="margin-top:15px;">
+            We look forward to seeing you 💇‍♀️💇‍♂️
+          </p>
+
+          <p>
+            <b>Salon & Spa</b><br/>
+            Ilorin, Kwara
+          </p>
+        </div>
+      `;
+
+      await sendEmail({
+        to: booking.email,
+        subject: "Your Salon Booking Is Confirmed ✅",
+        html: htmlEmail,
+      });
+
+      console.log("📧 Booking completion email sent to:", booking.email);
+    }
+
+    res.json({ message: "Booking updated", booking });
+  } catch (err) {
+    console.error("❌ Update error:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/* ❌ DELETE Booking */
 router.delete("/:id", async (req, res) => {
   try {
     const booking = await Booking.findById(req.params.id);
 
     if (!booking) {
-      return res.status(404).json({
-        error: "Booking not found",
-      });
+      return res.status(404).json({ error: "Booking not found" });
     }
 
     await booking.deleteOne();
-
-    res.status(200).json({
-      message: "Booking deleted successfully!",
-    });
+    res.json({ message: "Booking deleted" });
   } catch (err) {
-    res.status(500).json({
-      error: err.message,
-    });
+    res.status(500).json({ error: err.message });
   }
 });
 
