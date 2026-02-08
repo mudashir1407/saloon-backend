@@ -1,15 +1,18 @@
 const nodemailer = require("nodemailer");
 
+const transporter = nodemailer.createTransport({
+  host: "smtp.gmail.com",
+  port: 587,
+  secure: false, // TLS
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS, // App Password
+  },
+  connectionTimeout: 10000, // 10 seconds
+});
+
 const sendEmail = async ({ to, subject, html }) => {
   try {
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS, // Google App Password
-      },
-    });
-
     const info = await transporter.sendMail({
       from: `"Salon & Spa ✂️" <${process.env.EMAIL_USER}>`,
       to,
@@ -17,15 +20,11 @@ const sendEmail = async ({ to, subject, html }) => {
       html,
     });
 
-    console.log("✅ Email sent successfully:");
-    console.log("➡️ To:", to);
-    console.log("📨 Message ID:", info.messageId);
-
+    console.log("✅ Email sent successfully:", info.messageId);
     return info;
-  } catch (error) {
-    console.error("❌ Email sending failed:");
-    console.error(error.message);
-    throw error;
+  } catch (err) {
+    console.error("❌ Email sending failed:", err.message);
+    throw err;
   }
 };
 
